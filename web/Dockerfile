@@ -1,5 +1,5 @@
 # base image
-FROM node:20-alpine3.20 AS base
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS base
 LABEL maintainer="takatost@gmail.com"
 
 # if you located in China, you can use aliyun mirror to speed up
@@ -7,6 +7,8 @@ LABEL maintainer="takatost@gmail.com"
 
 RUN apk add --no-cache tzdata
 
+# 设置npm源为淘宝源
+RUN npm config set registry https://registry.npmmirror.com
 
 # install packages
 FROM base AS packages
@@ -71,24 +73,19 @@ EXPOSE 3000
 ENTRYPOINT ["/bin/sh", "./entrypoint.sh"]
 
 # 使用阿里云镜像
-FROM registry.cn-hangzhou.aliyuncs.com/node:18-alpine as builder
-
-# 设置npm源为淘宝源
-RUN npm config set registry https://registry.npmmirror.com
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS builder
 
 # 安装依赖
 WORKDIR /app/web
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# 复制源代码
+# 复制源代码并构建
 COPY . .
-
-# 构建
 RUN npm run build
 
 # 生产环境
-FROM registry.cn-hangzhou.aliyuncs.com/node:18-alpine
+FROM registry.cn-hangzhou.aliyuncs.com/library/node:18-alpine AS production
 
 WORKDIR /app/web
 
@@ -100,6 +97,11 @@ COPY --from=builder /app/web/package-lock.json ./package-lock.json
 
 # 只安装生产依赖
 RUN npm ci --only=production
+
+ENV NODE_ENV=production
+ENV PORT=3000
+
+EXPOSE 3000
 
 # 启动命令
 CMD ["npm", "start"]
