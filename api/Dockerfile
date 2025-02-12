@@ -1,5 +1,5 @@
 # base image
-FROM registry.cn-hangzhou.aliyuncs.com/library/python:3.11-slim AS base
+FROM registry.cn-hangzhou.aliyuncs.com/python:3.11-slim
 
 WORKDIR /app/api
 
@@ -24,7 +24,7 @@ RUN curl -sSL https://install.python-poetry.org | python3 -
 ENV POETRY_CACHE_DIR=/tmp/poetry_cache
 ENV POETRY_NO_INTERACTION=1
 ENV POETRY_VIRTUALENVS_IN_PROJECT=true
-ENV POETRY_VIRTUALENVS_CREATE=false
+ENV POETRY_VIRTUALENVS_CREATE=true
 ENV POETRY_REQUESTS_TIMEOUT=15
 
 FROM base AS packages

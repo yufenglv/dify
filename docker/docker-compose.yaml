@@ -396,6 +396,8 @@ services:
     build:
       context: ../api
       dockerfile: Dockerfile
+      args:
+        PYTHON_IMAGE: registry.cn-hangzhou.aliyuncs.com/python:3.11-slim
     restart: always
     environment:
       # Use the shared environment variables.
@@ -445,6 +447,8 @@ services:
     build:
       context: ../web
       dockerfile: Dockerfile
+      args:
+        NODE_IMAGE: registry.cn-hangzhou.aliyuncs.com/node:18-alpine
     restart: always
     environment:
       CONSOLE_API_URL: ${CONSOLE_API_URL:-}
