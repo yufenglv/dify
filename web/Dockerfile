@@ -69,37 +69,3 @@ ENV COMMIT_SHA=${COMMIT_SHA}
 USER 1001
 EXPOSE 3000
 ENTRYPOINT ["/bin/sh", "./entrypoint.sh"]
-
-# 使用阿里云镜像
-FROM registry.cn-hangzhou.aliyuncs.com/node:18-alpine as builder
-
-# 设置npm源为淘宝源
-RUN npm config set registry https://registry.npmmirror.com
-
-# 安装依赖
-WORKDIR /app/web
-COPY package.json package-lock.json ./
-RUN npm ci
-
-# 复制源代码
-COPY . .
-
-# 构建
-RUN npm run build
-
-# 生产环境
-FROM registry.cn-hangzhou.aliyuncs.com/node:18-alpine
-
-WORKDIR /app/web
-
-# 复制构建产物
-COPY --from=builder /app/web/.next ./.next
-COPY --from=builder /app/web/public ./public
-COPY --from=builder /app/web/package.json ./package.json
-COPY --from=builder /app/web/package-lock.json ./package-lock.json
-
-# 只安装生产依赖
-RUN npm ci --only=production
-
-# 启动命令
-CMD ["npm", "start"]
