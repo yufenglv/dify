@@ -394,6 +394,8 @@ services:
   # API service
   api:
     image: langgenius/dify-api:0.15.2
+    ports:
+      - '5001:5001'
     restart: always
     environment:
       # Use the shared environment variables.

@@ -42,55 +42,35 @@ function buildChatItemTree(allMessages: IChatItem[]): ChatItemInTree[] {
   const rootNodes: ChatItemInTree[] = []
   const childrenCount: Record<string, number> = {}
 
-  let lastAppendedLegacyAnswer: ChatItemInTree | null = null
-  for (let i = 0; i < allMessages.length; i += 2) {
-    const question = allMessages[i]!
-    const answer = allMessages[i + 1]!
-
-    const isLegacy = question.parentMessageId === UUID_NIL
-    const parentMessageId = isLegacy
-      ? (lastAppendedLegacyAnswer?.id || '')
-      : (question.parentMessageId || '')
-
-    // Process question
-    childrenCount[parentMessageId] = (childrenCount[parentMessageId] || 0) + 1
-    const questionNode: ChatItemInTree = {
-      ...question,
+  // Initialize all messages as nodes
+  allMessages.forEach(message => {
+    const node: ChatItemInTree = {
+      ...message,
       children: [],
     }
-    map[question.id] = questionNode
+    map[message.id] = node
 
-    // Process answer
-    childrenCount[question.id] = 1
-    const answerNode: ChatItemInTree = {
-      ...answer,
-      children: [],
-      siblingIndex: isLegacy ? 0 : childrenCount[parentMessageId] - 1,
+    if (message.isAnswer && message.parentMessageId) {
+      const parrentId = message.parentMessageId.startsWith('question-') 
+        ? message.parentMessageId.substring(9)
+        : message.parentMessageId
+      childrenCount[parrentId] = (childrenCount[parrentId] || 0) + 1
+      node.siblingIndex = childrenCount[parrentId] - 1
     }
-    map[answer.id] = answerNode
+  })
+ 
+  // 构建树结构
+  allMessages.forEach((message) => {
+    const node = map[message.id]
+    const parentId = message.parentMessageId
 
-    // Connect question and answer
-    questionNode.children!.push(answerNode)
-
-    // Append to parent or add to root
-    if (isLegacy) {
-      if (!lastAppendedLegacyAnswer)
-        rootNodes.push(questionNode)
-      else
-        lastAppendedLegacyAnswer.children!.push(questionNode)
-
-      lastAppendedLegacyAnswer = answerNode
-    }
+    if (!parentId || !map[parentId])
+      rootNodes.push(node)
     else {
-      if (
-        !parentMessageId
-        || !allMessages.some(item => item.id === parentMessageId) // parent message might not be fetched yet, in this case we will append the question to the root nodes
-      )
-        rootNodes.push(questionNode)
-      else
-        map[parentMessageId]?.children!.push(questionNode)
+      map[parentId]!.children!.push(node)
     }
-  }
+  })
+
 
   return rootNodes
 }
